@@ -111,12 +111,13 @@ class FindPairs(object):
         # sns.heatmap(1 - self.pvalue_matrix)
         plt.show()
 
-    def plotPair(self, leg1, leg2,mul = 2 ):
+    def plotPair(self, leg1, leg2, up = 2, down = 2, ECDF = False, pvalue = 0.05 ):
         """
         绘制leg1,leg2走势图，spread价差回归图，spread价差分布图
         :param leg1: 
         :param leg2: 
-        :param mul: spread的上下限标准差倍数，默认为2
+        :param up,down: spread的上下限标准差倍数，默认为2
+        :param ECDF: 是否通过ECDF，在(1-pvalue)的置信区间估算上下界 
         :return: 
         """
         tmp = self.pairs[self.pairs.leg1 == leg1]
@@ -134,11 +135,15 @@ class FindPairs(object):
         legs['spreadZ'] = (legs['spread'] - spreadMean)/spreadStd
         idmax = legs['spread'].idxmax()
         idmin = legs['spread'].idxmin()
+        # print legs.index[len(legs)/4]
+        # print type(idmax)
 
+        dataName = u"legs{leg1}_{leg2}.csv".format(leg1 = leg1, leg2 = leg2)
+        # print dataName
+        legs.to_csv(dataName)
 
-
-        print  "value of max: ", legs['spread'].ix[idmax]
-        print  "value of min: ", legs['spread'].ix[idmin]
+        # print  "value of max: ", legs['spread'].ix[idmax]
+        # print  "value of min: ", legs['spread'].ix[idmin]
 
         # print type(idmax)
         # 绘图初始设置
@@ -151,9 +156,15 @@ class FindPairs(object):
         axes[0].set_title(leg1 + u' and ' + leg2)
 
         # 绘制价差spread走势图
-        # spreadMid = spreadMean
-        spreadUp = spreadMean + mul* spreadStd
-        spreadDown = spreadMean - mul* spreadStd
+        if ECDF:
+            # 采用经验分布函数ECDF，对spreadZ的价差估计出0.95置信度下的范围
+            import statsmodels.api as sm
+            kde = sm.nonparametric.KDEUnivariate(legs.spreadZ)
+            kde.fit()
+            up = abs(kde.support[kde.cdf >= (1 - pvalue)][0])
+            down = abs(kde.support[kde.cdf <= pvalue][-1])
+        spreadUp = spreadMean + up * spreadStd
+        spreadDown = spreadMean - down * spreadStd
 
         legs['spread'].plot(ax = axes[1], color = 'k')
         axes[1].axhline(spreadMean, color="red", linestyle="--")
@@ -162,13 +173,21 @@ class FindPairs(object):
 
         axes[1].legend(["Spread", "Mean"])
         axes[1].set_ylabel('Spread Price')
-        outlier = [(idmax, round(legs['spread'].ix[idmax],2)), (idmin, round(legs['spread'].ix[idmin],2))]
 
+        # 标注价差最大，最小值
+        outlier = [(idmax, round(legs['spread'].ix[idmax],2)), (idmin, round(legs['spread'].ix[idmin],2))]
         spread = legs['spread']
         for date,label in outlier:
-            axes[1].annotate(label, xy=(date, spread.asof(date)), xytext = (date, spread.asof(date) + 200),
+            axes[1].annotate(label, xy=(date, spread.asof(date)), xytext = (date, spread.asof(date) + 20),
                               arrowprops=dict(facecolor='R'),
                               horizontalalignment='left', verticalalignment='top')
+        # 标注价差上下界bands
+        bands = [(legs.index[len(legs)/4],round(spreadUp,2) ), (legs.index[len(legs)/2],round(spreadMean,2) ),(legs.index[len(legs)*3/4],round(spreadDown,2) )]
+        for date,label in bands:
+            axes[1].annotate(label, xy=(date, label), xytext = (date, label + 20),
+                              arrowprops=dict(facecolor='Y'),
+                              horizontalalignment='left', verticalalignment='top')
+
         # 绘制spread的分布图
         sns.distplot(legs['spreadZ'], bins=50, ax = axes[2])
         axes[2].set_ylabel('Hist')
@@ -209,7 +228,8 @@ if __name__=='__main__':
     # print df['JD']
 
     test = FindPairs(df.dropna())
+    # test.pairs.to_csv('pair.csv')
     print test.pairs
-    leg1 = 'PM'
-    leg2 = 'M'
-    test.plotPair(leg1,leg2)
+    leg1 = 'FU'
+    leg2 = 'RS'
+    test.plotPair(leg1,leg2, ECDF=True)
