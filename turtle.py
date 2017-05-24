@@ -32,8 +32,8 @@ index_data['最近N2个交易日的最低点'].fillna(value=pd.expanding_min(ind
 buy_index = index_data[index_data['close'] > index_data['最近N1个交易日的最高点'].shift(1)].index
 index_data.loc[buy_index, '收盘发出的信号'] = 1
 # 当当天的【close】< 昨天的【最近N2个交易日的最低点】时，将【收盘发出的信号】设定为0
-sell_index = index_data[index_data['close'] < index_data['最近N2个交易日的最低点'].shift(1)].index
-index_data.loc[sell_index, '收盘发出的信号'] = 0
+sell_index = index_data[index_data['close'] < index_data[u'最近N2个交易日的最低点'].shift(1)].index
+index_data.loc[sell_index, u'收盘发出的信号'] = 0
 
 # 计算每天的仓位，当天持有上证指数时，仓位为1，当天不持有上证指数时，仓位为0
 index_data['当天的仓位'] = index_data['收盘发出的信号'].shift(1)
