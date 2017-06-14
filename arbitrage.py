@@ -66,7 +66,7 @@ class FindPairs(object):
                 result = sm.tsa.stattools.coint(sub1, sub2)
                 pvalue = result[1]
                 self.pvalue_matrix[i, j] = pvalue
-                if pvalue < 0.05:
+                if pvalue < self.pvalue:
                     pairs.append((self.keys[i], self.keys[j], pvalue))
 
         # pair配对结果
@@ -230,6 +230,6 @@ if __name__=='__main__':
     test = FindPairs(df.dropna())
     # test.pairs.to_csv('pair.csv')
     print test.pairs
-    leg1 = 'FU'
-    leg2 = 'RS'
+    leg1 = 'PM'
+    leg2 = 'CS'
     test.plotPair(leg1,leg2, ECDF=True)
