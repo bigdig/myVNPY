@@ -52,7 +52,7 @@ def main():
 
  #    获取今日日期
     date = time.strftime("%Y-%m-%d", time.localtime())
- #    date = '2017-05-19'
+    date = '2017-05-19'
  #  判断日期是否为交易日
     tmp = ts.get_k_data('000001', index = True, start = date)
     if tmp.empty:
@@ -63,7 +63,7 @@ def main():
 #   获取股票列表
     stock_list = ts.get_stock_basics(date)
     # 取10个股票测试
-    stock_list = stock_list[:10]
+    # stock_list = stock_list[:10]
     # 循环写入mongodb
     for code, info in stock_list.iterrows():
         print "-------"*5

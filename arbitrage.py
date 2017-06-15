@@ -15,6 +15,7 @@ import seaborn as sns
 #分析包导入
 import talib as ta
 
+
 class FindPairs(object):
     """
     套利分析类，完成以下功能：
@@ -230,6 +231,10 @@ if __name__=='__main__':
     test = FindPairs(df.dropna())
     # test.pairs.to_csv('pair.csv')
     print test.pairs
-    leg1 = 'PM'
-    leg2 = 'CS'
+    leg1 = 'RB'
+    leg2 = 'I'
     test.plotPair(leg1,leg2, ECDF=True)
+    import cPickle as pickle
+    symbols = pickle.load(file('C:\\vnpy-1.5\\vn.trader\\myVNPY\\symbol.pkl','rb'))
+    print symbols.ix[leg1]
+    print symbols.ix[leg2]
