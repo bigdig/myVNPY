@@ -235,6 +235,7 @@ if __name__=='__main__':
     leg2 = 'I'
     test.plotPair(leg1,leg2, ECDF=True)
     import cPickle as pickle
-    symbols = pickle.load(file('C:\\vnpy-1.5\\vn.trader\\myVNPY\\symbol.pkl','rb'))
+    with file('C:\\vnpy-1.5\\vn.trader\\myVNPY\\symbol.pkl','rb') as f:
+        symbols = pickle.load(f)
     print symbols.ix[leg1]
     print symbols.ix[leg2]
