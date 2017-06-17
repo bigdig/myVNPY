@@ -29,6 +29,16 @@ class FindPairs(object):
            :param data:  需要分析的dataframe, index为时间，列名为不同标的
            :param pvalue:  平稳性、协整性检验的判断系数, p 值越低，平稳、协整关系就越强；
            '''
+
+        #     加载期货代码对应表
+        import cPickle as pickle
+        try:
+            with file('symbol.pkl', 'r') as f:
+                self.symbols = pickle.load(f)
+                # print self.symbols.head()
+        except IOError:
+            print "Can not open symbol.pkl"
+
         self.pvalue = pvalue
         self.data = data
         self.n = self.data.shape[1]
@@ -38,6 +48,8 @@ class FindPairs(object):
         self.find_stationarity()
         self.find_cointegration()
         self.find_coef()
+
+
 
     def find_stationarity(self):
         """
@@ -78,6 +90,10 @@ class FindPairs(object):
         self.pairs['index'] = index
         self.pairs.set_index('index', inplace= True)
 
+        # pairs['leg1name'] = self.symbols.ix[pairs.leg1]['name'].values
+        # pairs['leg2name'] = self.symbols.ix[pairs.leg2]['name'].values
+
+
     def find_coef(self):
         """
         计算配对系数coef
@@ -99,6 +115,8 @@ class FindPairs(object):
             coefList.append(coef)
 
         self.pairs['coef'] = coefList
+        self.pairs['pairs'] = self.symbols.ix[self.pairs.leg1]['name'].values + ' VS ' + \
+                              self.symbols.ix[self.pairs.leg2]['name'].values
 
     def plotHeatmap(self):
         """
@@ -123,7 +141,10 @@ class FindPairs(object):
         """
         tmp = self.pairs[self.pairs.leg1 == leg1]
         coef =  (tmp[tmp.leg2 == leg2].coef).values
-        # print coef
+
+        # 查找leg1,leg2对应商品名称
+        leg1Name = self.symbols.ix[leg1,'name']
+        leg2Name = self.symbols.ix[leg2,'name']
 
         legs = pd.DataFrame()
         legs[leg1] = self.data[leg1]
@@ -136,25 +157,29 @@ class FindPairs(object):
         legs['spreadZ'] = (legs['spread'] - spreadMean)/spreadStd
         idmax = legs['spread'].idxmax()
         idmin = legs['spread'].idxmin()
-        # print legs.index[len(legs)/4]
-        # print type(idmax)
 
         dataName = u"legs{leg1}_{leg2}.csv".format(leg1 = leg1, leg2 = leg2)
         # print dataName
         legs.to_csv(dataName)
 
-        # print  "value of max: ", legs['spread'].ix[idmax]
-        # print  "value of min: ", legs['spread'].ix[idmin]
-
-        # print type(idmax)
         # 绘图初始设置
+        # 设置中文
+        from matplotlib.font_manager import FontProperties
+        font = FontProperties(fname=r"C:\Windows\Fonts\\simhei.ttf", size=14)
+
         fig, axes = plt.subplots(3, 1, figsize=(20, 12))
 
         # 绘制leg1,leg2走势图
         legs[[leg1,leg2]].plot(ax = axes[0])
         axes[0].grid(True)
         axes[0].set_ylabel('Settle Price')
-        axes[0].set_title(leg1 + u' and ' + leg2)
+
+        # Python的str默认是ascii编码，和unicode编码冲突
+        import sys
+        reload(sys)
+        sys.setdefaultencoding('utf8')
+        title = leg1Name + '(' + leg1 + ')' + '  VS  ' + leg2Name +'(' + leg2 + ')'
+        axes[0].set_title(title, fontproperties = font)
 
         # 绘制价差spread走势图
         if ECDF:
@@ -231,11 +256,7 @@ if __name__=='__main__':
     test = FindPairs(df.dropna())
     # test.pairs.to_csv('pair.csv')
     print test.pairs
+
     leg1 = 'RB'
     leg2 = 'I'
     test.plotPair(leg1,leg2, ECDF=True)
-    import cPickle as pickle
-    with file('C:\\vnpy-1.5\\vn.trader\\myVNPY\\symbol.pkl','rb') as f:
-        symbols = pickle.load(f)
-    print symbols.ix[leg1]
-    print symbols.ix[leg2]
