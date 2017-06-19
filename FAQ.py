@@ -52,3 +52,12 @@ from ctaBacktesting import *
 # ##################################################
 # (4)pycharm中运行程序出现nosetest，原因在于出现了test开头的函数
 # settings-tools-Python Integrated Tools-Default test runner-py.test
+
+# ##################################################
+# (5）LOG写入函数
+def writeLog(message, logfile = '.\\getTushare.log'):
+    import sys
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+    with open(logfile,'a+') as f:
+        f.writelines(message + '\n')
