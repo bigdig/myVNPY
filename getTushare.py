@@ -41,6 +41,13 @@ class BarData(object):
         self.volume = EMPTY_INT  # 成交量
         self.code = EMPTY_STRING  # 代码
 
+def writeLog(message, logfile = '.\\getTushare.log'):
+    import sys
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+    with open(logfile,'a+') as f:
+        f.writelines(message + '\n')
+
 
 def get_daily_data(code, date, ktype = 'D' ):
     """
@@ -50,7 +57,26 @@ def get_daily_data(code, date, ktype = 'D' ):
     :param ktype: 默认日K线
     :return:
     """
-    return ts.get_k_data(code, start = date, ktype = ktype)
+    ktypeDic = {'D': u'日', 'W':u'周', 'M':u"月", \
+                '5':u'5分钟', '15':u"15分钟",'30':u'30分钟','60':'60分钟'}
+    message =  u'开始下载 {date}, {code}的{ktype}行情'.format(date = date, code = code, ktype = ktypeDic[ktype])
+    print message
+    writeLog(message)
+
+    start = time.time()
+
+    try:
+        data = ts.get_k_data(code, start = date, ktype = ktype)
+    except Exception:
+        print u"下载行情数据失败"
+        writeLog( u"下载行情数据失败")
+        return pd.DataFrame()
+
+    message = u'下载完毕，耗时：%.3f秒' % (time.time() - start)
+    print message
+    writeLog(message)
+
+    return data
 
 def write_daily_data(client, data, ktype = 'D'):
     """
@@ -60,7 +86,8 @@ def write_daily_data(client, data, ktype = 'D'):
     :param ktype: 默认日K线
     :return:
     """
-
+    ktypeDic = {'D': u'dayData', 'W': u'weekData', 'M': u"monthData", '5': u'5mData', \
+                '15': u"15mData", '30': u'30mData', '60': '60mData'}
     if ktype in ['D','W','M']:
         timeFormat = '%Y-%m-%d'
     elif ktype in ['5','15','30','60']:
@@ -69,16 +96,22 @@ def write_daily_data(client, data, ktype = 'D'):
         print "{ktype} is not valid".format(ktype = ktype)
         return 0
 
-    #   获取数据库stockdata
-    db = client.stockdata
+    #   获取数据库db名称
+    dbName = 'tushareData'
+    db = client[dbName]
 
-    #   获取数据集合dailydata
-    dailydata = db.dailydata
+    #   获取数据collection名称
+    collName = ktypeDic[ktype]
+    dailydata = db[collName]
 
-    print data.head()
-    print timeFormat
+    # print data.head()yyyy
+    # print timeFormat
+
     start = time.time()
-    print u'开始读取数据插入到数据库中'
+    # print start
+    message = u'开始读取数据插入到数据库 {dbName}-{collName}'.format(dbName = dbName, collName = collName)
+    print message
+    writeLog(message)
 
     # 生成K线bar实例
     for values in data.values:
@@ -91,56 +124,89 @@ def write_daily_data(client, data, ktype = 'D'):
         bar.volume = values[5]
         bar.code = values[6]
 
-        # bar.date = datetime.strptime(d['Date'], '%Y/%m/%d').strftime('%Y%m%d')
-        # bar.time = d['Time']
-        # bar.datetime = datetime.strptime(bar.date + ' ' + bar.time, '%Y%m%d %H:%M:%S')
-        # bar.volume = d['TotalVolume']
-
-        # flt = {'date': bar.date}
-        print bar.__dict__
-        # dailydata.insert({'$set': bar.__dict__})
         dailydata.insert(bar.__dict__)
-        print bar.date
 
-    print u'插入完毕，耗时：%s秒' % (time.time() - start)
+    # print u'数据库插入完毕，耗时：%.3f秒' % (time.time() - start)
+    message =  u'数据插入完毕，耗时：%.3f秒' % (time.time() - start)
+    print message
+    writeLog(message)
 
-#     写入数据
-#     dailydata.insert(json.loads(data.to_json(orient = 'records')))
+    return 1
 
-
-
-def main():
+def main(klist = ['5'],tryNum = 5):
 
  #    获取今日日期
- #    date = time.strftime("%Y-%m-%d", time.localtime())
-    date = '2017-06-15'
+    date = time.strftime("%Y-%m-%d", time.localtime())
+ # ktypeDic = {'D': u'dayData', 'W': u'weekData', 'M': u"monthData", '5': u'5mData', \
+ #             '15': u"15mData", '30': u'30mData', '60': '60mData'}
+ #    date = '2017-06-15'
+ #    ktype = 'D'
+    tryNum = tryNum
  #  判断日期是否为交易日
     tmp = ts.get_k_data('000001', index = True, start = date)
     if tmp.empty:
-        print "{date} is not market day".format(date = date)
+        message = u"{date} 非交易日".format(date = date)
+        print message
+        writeLog(message)
         return 0
- #  获取pymongo客户端
+
+#  获取pymongo客户端
     client = pymongo.MongoClient()
+
 #   获取股票列表
     stock_list = ts.get_stock_basics(date)
+
     # 取10个股票测试
-    stock_list = stock_list[:2]
+    # stock_list = stock_list[:2]
     # stock_list = ['300607','600728']
+
     # 循环写入mongodb
+
+
+
     for code, info in stock_list.iterrows():
-        print "-------"*5
-        print "Trying:{code}".format(code = code)
-        # print info
-        # for i in range(5):
-        try:
-            write_daily_data(client, get_daily_data(code, date,'5'),'5')
-            print "Written:{code}".format(code = code)
-        except:
-            print "Retrying:{code}".format(code=code)
+        for ktype in klist:
+            i = 1
+            while i <= tryNum:
+            # 循环尝试下载数据，次数为tryNum
+                message = "-------" * 5
+                print message
+                writeLog(message)
 
+                data = get_daily_data(code, date,ktype)
 
-    # write_daily_data(client, get_daily_data('300607', date))
+                if not data.empty:
+                    break
+                else:
+                    i += 1
+                    message = "第{i}次重新尝试下载: {code}".format(i = i,code=code)
+                    print message
+                    writeLog(message)
+            if not data.empty:
+                write_daily_data(client, data, ktype)
+            else:
+                message = "无法下载: {code}".format(code=code)
+                print message
+                writeLog(message)
     return 0
 
 if __name__ == '__main__':
-    main()
+
+    message = "-------" * 8
+    print message
+    writeLog(message)
+
+    import os
+    message = u" 启动任务: " + os.path.splitext(os.path.basename(__file__))[0] +' : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    print message
+    writeLog(message)
+
+    start = time.time()
+    klist = ['5','15','30']
+    tryNum = 5
+    main(klist, tryNum)
+    # print u"结束任务: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    message =   u" 结束任务: " + os.path.splitext(os.path.basename(__file__))[0] +' : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + \
+               u' ,耗时：%.3f秒' % (time.time() - start)
+    print message
+    writeLog(message)
