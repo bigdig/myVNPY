@@ -67,9 +67,14 @@ def get_daily_data(code, date, ktype = 'D' ):
 
     try:
         data = ts.get_k_data(code, start = date, ktype = ktype)
-    except Exception:
+    except Exception,e:
         print u"下载行情数据失败"
         writeLog( u"下载行情数据失败")
+
+        message = u"错误：{ecode}".format(ecode=e)
+        print message
+        writeLog(message)
+
         return pd.DataFrame()
 
     message = u'下载完毕，耗时：%.3f秒' % (time.time() - start)
@@ -143,7 +148,13 @@ def main(klist = ['5'],tryNum = 5):
  #    ktype = 'D'
     tryNum = tryNum
  #  判断日期是否为交易日
-    tmp = ts.get_k_data('000001', index = True, start = date)
+    try:
+        tmp = ts.get_k_data('000001', index = True, start = date)
+    except Exception, e:
+        message =  u"错误：{ecode}".format(ecode = e)
+        print message
+        writeLog(message)
+
     if tmp.empty:
         message = u"{date} 非交易日".format(date = date)
         print message
@@ -154,7 +165,13 @@ def main(klist = ['5'],tryNum = 5):
     client = pymongo.MongoClient()
 
 #   获取股票列表
-    stock_list = ts.get_stock_basics(date)
+    try:
+        stock_list = ts.get_stock_basics(date)
+    except Exception, e:
+        message = u"错误：{ecode}".format(ecode=e)
+        print message
+        writeLog(message)
+        stock_list = ts.get_stock_basics()
 
     # 取10个股票测试
     # stock_list = stock_list[:2]
@@ -197,7 +214,7 @@ if __name__ == '__main__':
     writeLog(message)
 
     import os
-    message = u" 启动任务: " + os.path.splitext(os.path.basename(__file__))[0] +' : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    message = u"启动任务: " + os.path.splitext(os.path.basename(__file__))[0] +' : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     print message
     writeLog(message)
 
@@ -206,7 +223,7 @@ if __name__ == '__main__':
     tryNum = 5
     main(klist, tryNum)
     # print u"结束任务: " + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    message =   u" 结束任务: " + os.path.splitext(os.path.basename(__file__))[0] +' : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + \
+    message =   u"结束任务: " + os.path.splitext(os.path.basename(__file__))[0] +' : ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + \
                u' ,耗时：%.3f秒' % (time.time() - start)
     print message
     writeLog(message)

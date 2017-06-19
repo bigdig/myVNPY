@@ -54,10 +54,20 @@ from ctaBacktesting import *
 # settings-tools-Python Integrated Tools-Default test runner-py.test
 
 # ##################################################
-# (5）LOG写入函数
+# (5)LOG写入函数
 def writeLog(message, logfile = '.\\getTushare.log'):
     import sys
     reload(sys)
     sys.setdefaultencoding('utf8')
     with open(logfile,'a+') as f:
         f.writelines(message + '\n')
+
+# ##################################################
+# (6)try...except
+
+    try:
+        tmp = ts.get_k_data('000001', index = True, start = date)
+    except Exception, e:
+        message =  u"错误：{ecode}".format(ecode = e)
+        print message
+        writeLog(message)
