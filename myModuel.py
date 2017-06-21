@@ -44,5 +44,19 @@ def plotStock(code, start, end):
     plt.plot()
     plt.show()
 
+def writeLog(message, logfile = '.\\getTushare.log'):
+    """
+    写log
+    :param message:
+    :param logfile:
+    :return:
+    """
+    import sys
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+    with open(logfile,'a+') as f:
+        f.writelines(message + '\n')
+
+
 if __name__ == '__main__':
     plotStock('600837', '2015-01-01', '2017-03-31')
