@@ -71,3 +71,14 @@ def writeLog(message, logfile = '.\\getTushare.log'):
         message =  u"错误：{ecode}".format(ecode = e)
         print message
         writeLog(message)
+# ##################################################
+ #  (7)str的format方法
+# 位置替换
+'{0},{1}'.format('kzc',18)
+# 关键字替换
+'{name},{age}'.format(age=18,name='kzc')
+# 限定符
+'{:.2f}'.format(321.33345)
+'321.33'
+# 千分位
+'{:,}'.format(1234567890)
