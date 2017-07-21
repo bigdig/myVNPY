@@ -221,9 +221,8 @@ class FindPairs(object):
         plt.subplots_adjust(hspace=0.3)
         plt.show()
 
-if __name__=='__main__':
-
-#  导入2008010-20170401的期货日线CSV
+def main():
+    #  导入2008010-20170401的期货日线CSV
     fileName = u'C:\\vnpy-1.5\\vn.trader\\myVNPY\\future0817.csv'
     future0817 = pd.read_csv(fileName, index_col='tradeDate')
     # print future0817.info()
@@ -236,12 +235,12 @@ if __name__=='__main__':
     con = list(set(data['contractObject']))
     df = pd.DataFrame()
     for i in con:
-        df2 = pd.DataFrame(data[data['contractObject']==i]['settlePrice'])
+        df2 = pd.DataFrame(data[data['contractObject'] == i]['settlePrice'])
         df2.columns = [i]
-        df = pd.concat([df,df2], axis=1)
+        df = pd.concat([df, df2], axis=1)
 
     # 删除流动性差的品种
-    badFluidity = ['WH','RI','LR','JR','FB','BB','PB','SF','SM','SN','BU','WR']
+    badFluidity = ['WH', 'RI', 'LR', 'JR', 'FB', 'BB', 'PB', 'SF', 'SM', 'SN', 'BU', 'WR']
     for i in badFluidity:
         del df[i]
 
@@ -259,4 +258,8 @@ if __name__=='__main__':
 
     leg1 = 'RB'
     leg2 = 'I'
-    test.plotPair(leg1,leg2, ECDF=True)
+    test.plotPair(leg1, leg2, ECDF=True)
+
+
+if __name__=='__main__':
+    main()
